@@ -1,0 +1,26 @@
+{
+  "product_id": 123,
+  "questions": [
+    {
+      "question_id": 37,
+      "question_body": "Why is this product cheaper?",
+      "question_date": "2018-10-18T00:00:00.000Z",
+      "asker_name": "user123",
+      "question_helpfulness": 4,
+      "reported": false,
+      "answers": {
+        "68": {
+          "id": 68,
+          "body": "Because we sell directly!",
+          "date": "2018-08-18T00:00:00.000Z",
+          "answerer_name": "seller123",
+          "helpfulness": 3,
+          "photos": [
+            "url_to_photo1.jpg",
+            "url_to_photo2.jpg"
+          ]
+        }
+      }
+    }
+  ]
+}
