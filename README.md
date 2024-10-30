@@ -1,5 +1,6 @@
 # q-a
 database for q&amp;a API calls (by Eve)
+<<<<<<< HEAD
 
 
 after seeding the question collection with transformed_questions.csv, run these commands inside mongosh to fix some data formats:
@@ -101,3 +102,5 @@ db.questions.aggregate([
   },
   { $out: "questions" }
 ]);
+=======
+>>>>>>> a0b89785134e6f9278d562e0fbf68a9fe9b4ef92
