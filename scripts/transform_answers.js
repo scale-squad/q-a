@@ -1,18 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
-const { Parser, Transform } = require('json2csv');
+const { Parser } = require('json2csv');
 
 const photosByAnswer = {};
-
 
 const photosFilePath = path.resolve(__dirname, '../data/answers_photos.csv');
 const inputFilePath = path.resolve(__dirname, '../data/answers.csv');
 const outputFilePath = path.resolve(__dirname, '../data/transformed_answers.csv');
 
-
 const fields = [
-  'id',
+  '_id',
   'question_id',
   'answer_body',
   'answer_date',
@@ -22,7 +20,6 @@ const fields = [
   'reported',
   'photos',
 ];
-
 
 const json2csv = new Parser({ fields });
 
@@ -35,7 +32,7 @@ fs.createReadStream(photosFilePath)
     photosByAnswer[answerId].push({ id: parseInt(row.id), url: row.url });
   })
   .on('end', () => {
-
+    console.log('Photos loaded. Now answers');
 
     const inputStream = fs.createReadStream(inputFilePath).pipe(csv());
     const outputStream = fs.createWriteStream(outputFilePath);
@@ -43,19 +40,18 @@ fs.createReadStream(photosFilePath)
 
     outputStream.write(json2csv.parse([]).split('\n')[0] + '\n');
 
-
     inputStream
       .on('data', (row) => {
         const transformedRow = {
-          id: parseInt(row.id),
+          _id: parseInt(row.id),
           question_id: row.question_id.toString(),
           answer_body: row.body,
           answer_date: new Date(parseInt(row.date_written)).toISOString(),
           answerer_name: row.answerer_name,
           answerer_email: row.answerer_email,
           answer_helpfulness: parseInt(row.helpful),
-          reported: row.reported === '1',
-          photos: JSON.stringify(photosByAnswer[row.id] || []),
+          reported: row.reported === '1' ? true : false,
+          photos: photosByAnswer[row.id] || [],
         };
 
         try {
@@ -66,7 +62,7 @@ fs.createReadStream(photosFilePath)
         }
       })
       .on('end', () => {
-
+        console.log('Transformation complete!!! Wohoo');
         outputStream.end();
       })
       .on('error', (err) => console.error('Error processing answers:', err));
