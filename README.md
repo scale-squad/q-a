@@ -63,7 +63,8 @@ Run this command to confirm the sample of data looks correct:
 db.questions.find().limit(5).pretty()
 db.answers.find().limit(5).pretty()
 
-
+To seed the answers collection:
+mongoimport --db qa_database --collection answers --type csv --file ./data/cleaned_answers.csv --headerline
 
 
 /////////
