@@ -3,49 +3,37 @@ database for q&amp;a API calls (by Eve)
 <<<<<<< HEAD
 
 
-after seeding the question collection with transformed_questions.csv, run these commands inside mongosh to fix some data formats:
+----- 1. To seed:
 
+mongoimport --db qa_database --collection questions --type csv --file ./data/transformed_questions.csv --headerline
 
+mongoimport --db qa_database --collection answers --type csv --file ./data/transformed_answers.csv --headerline
 
+----- 2.after seeding the question collection with transformed_questions.csv, run this command inside mongosh to convert reported to Boolean for questions:
 
-Convert reported to Boolean for questions:
 db.questions.updateMany(
-  {},
-  [
-    {
-      $set: {
-        reported: {
-          $cond: {
-            if: { $eq: ["$reported", "true"] },
-            then: true,
-            else: false
-          }
-        }
-      }
-    }
-  ]
+  { reported: "false" },
+  { $set: { reported: false } }
 );
 
-Convert reported to Boolean for answers:
-db.answers.updateMany(
-  {},
-  [
-    {
-      $set: {
-        reported: {
-          $cond: {
-            if: { $eq: ["$reported", "true"] },
-            then: true,
-            else: false
-          }
-        }
-      }
-    }
-  ]
+db.questions.updateMany(
+  { reported: "true" },
+  { $set: { reported: true } }
 );
 
-Convert question_id to String:
+----- 3. To clean up answers, run this script:
 
+node scripts/clean_answers.js
+
+
+----- 4. Run this command to confirm the sample of data looks correct:
+
+db.questions.find().limit(5).pretty()
+db.answers.find().limit(5).pretty()
+
+
+
+----- 5. additional steps to help verify the data in correct format:
 
 Run this command to verify that there are true and false fields:
 db.questions.find({ reported: true }).limit(5).pretty();
@@ -59,48 +47,10 @@ db.questions.countDocuments({ reported: false });
 db.answers.countDocuments({ reported: true });
 db.answers.countDocuments({ reported: false });
 
-Run this command to confirm the sample of data looks correct:
-db.questions.find().limit(5).pretty()
-db.answers.find().limit(5).pretty()
 
-To seed the answers collection:
-mongoimport --db qa_database --collection answers --type csv --file ./data/cleaned_answers.csv --headerline
+----- 6. Seed counters collection with exisiting IDs from collections:
+
+node scripts/seed_counters.js
 
 
-/////////
-Embedding answers into questions collection later if needed:
-db.questions.aggregate([
-  {
-    $lookup: {
-      from: "answers",
-      localField: "_id",
-      foreignField: "question_id",
-      as: "answersArray"
-    }
-  },
-  {
-    $addFields: {
-      answers: {
-        $arrayToObject: {
-          $map: {
-            input: "$answersArray",
-            as: "answer",
-            in: [
-              "$$answer._id",
-              {
-                id: "$$answer._id",
-                body: "$$answer.body",
-                date: "$$answer.date",
-                answerer_name: "$$answer.answerer_name",
-                helpfulness: "$$answer.helpfulness",
-                photos: "$$answer.photos"
-              }
-            ]
-          }
-        }
-      }
-    }
-  },
-  { $out: "questions" }
-]);
-=======
+

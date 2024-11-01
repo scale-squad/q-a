@@ -9,39 +9,62 @@ db.once('open', function() {
 
 
 let questionsSchema = mongoose.Schema({
-  id: { type: Number, required: true, unique: true },
+  _id: { type: Number, required: true },
   product_id: {
     type: Number,
     required: true,
+    index: true
   },
   question_body: String,
   question_date: String,
   asker_name: String,
   asker_email: String,
   question_helpfulness: Number,
-  reported: Boolean,
+  reported: {type: Boolean, index: true},
   answers: { type: Map, of: Object }
-}, { _id: false });
+});
 
 
 let Question = mongoose.model('Question', questionsSchema);
 
 let answersSchema = mongoose.Schema({
-  id: { type: Number, required: true, unique: true },
+  _id: { type: Number, required: true },
   question_id: {
     type: Number,
     required: true,
+    index: true
   },
   answer_body: String,
   answer_date: String,
   answerer_name: String,
   answerer_email: String,
   answer_helpfulness: Number,
-  reported: Boolean,
+  reported: { type: Boolean, index: true },
   photos: Array
-}, { _id: false });
+});
 
 let Answer = mongoose.model('Answer', answersSchema);
+
+
+const counterSchema = new mongoose.Schema({
+  _id: String,
+  seq_value: { type: Number, default: 0 }
+});
+
+const Counter = mongoose.model("Counter", counterSchema);
+
+
+async function getNextId(type) {
+  const result = await Counter.findOneAndUpdate(
+    { _id: type },
+    { $inc: { seq_value: 1 } },
+    { new: true, upsert: true }
+  );
+  return result.seq_value;
+}
+
+
+
 
 
 
@@ -54,15 +77,28 @@ let fetch = (collection, id, page, count) => {
       {
         $match: { product_id: Number(id), reported: false }
       },
+      { $skip: Number(skip) },
+      { $limit: Number(count) },
       {
         $lookup: {
           from: 'answers',
-          localField: '_id',
-          foreignField: 'question_id',
+          let: { questionId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $and: [{ $eq: ["$question_id", "$$questionId"] }, { $eq: ["$reported", false] }] } } },
+            {
+              $project: {
+                _id: 1,
+                answer_body: 1,
+                answer_date: 1,
+                answerer_name: 1,
+                answer_helpfulness: 1,
+                photos: 1
+              }
+            }
+          ],
           as: 'answers'
         }
       },
-      // format answers array
       {
         $addFields: {
           answers: {
@@ -86,10 +122,7 @@ let fetch = (collection, id, page, count) => {
           }
         }
       }
-    ])
-    .skip(Number(skip))
-    .limit(Number(count))
-    .exec();
+    ]).exec();
 
     // return Question.find({ product_id: id, reported: false })
     // .skip(skip)
@@ -106,16 +139,19 @@ let fetch = (collection, id, page, count) => {
 }
 
 
-let save = (collection, body, name, email, id, photos) => {
+let save = async (collection, body, name, email, id, photos) => {
   if (collection === "questions") {
+
+        let newQuestionId = await getNextId("questions");
     let newQuestion = new Question({
+      _id: newQuestionId,
       product_id: id,
       question_body: body,
-  question_date: new Date().toISOString(),
-  asker_name: name,
-  asker_email: email,
-  question_helpfulness: 0,
-  reported: false,
+      question_date: new Date().toISOString(),
+      asker_name: name,
+      asker_email: email,
+      question_helpfulness: 0,
+      reported: false,
     });
     return newQuestion.save()
     .then(() => {
@@ -124,15 +160,18 @@ let save = (collection, body, name, email, id, photos) => {
       console.error('Error saving a word ', err);
     });
    } else {
+
+    let newAnswerId = await getNextId("answers");
     let newAnswer = new Answer({
+      _id: newAnswerId,
       question_id: id,
       answer_body: body,
-  answer_date: new Date().toISOString(),
-  answerer_name: name,
-  answerer_email: email,
-  answer_helpfulness: 0,
-  reported: false,
-  photos: photos
+      answer_date: new Date().toISOString(),
+      answerer_name: name,
+      answerer_email: email,
+      answer_helpfulness: 0,
+      reported: false,
+      photos: photos
     });
     return newAnswer.save()
     .then(() => {
@@ -146,7 +185,7 @@ let save = (collection, body, name, email, id, photos) => {
 let helpful = (collection, id) => {
   if (collection === "questions") {
     return Question.findOneAndUpdate (
-      {_id: id},
+      {id: id},
       {$inc: { question_helpfulness: 1 } },
       {new: true}
     ).exec()
@@ -155,7 +194,7 @@ let helpful = (collection, id) => {
     }).catch(err => console.log('Error updating the question', err));
   } else {
     return Answer.findOneAndUpdate (
-      {_id: id},
+      {id: id},
       {$inc: { answer_helpfulness: 1 }},
       {new: true}
     ).exec()
@@ -169,7 +208,7 @@ let helpful = (collection, id) => {
 let report = (collection, id) => {
   if (collection === "questions") {
     return Question.findOneAndUpdate (
-      {_id: id},
+      {id: id},
       {reported: true},
       {new: true}
     ).exec()
@@ -178,7 +217,7 @@ let report = (collection, id) => {
     }).catch(err => console.log('Error reporting the question', err));
   } else {
     return Answer.findOneAndUpdate (
-      {_id: id},
+      {id: id},
       {reported: true},
       {new: true}
     ).exec()
@@ -190,7 +229,7 @@ let report = (collection, id) => {
 
 
 
-module.exports = { Answer, Question, fetch, save, helpful, report };
+module.exports = { Answer, Question, Counter, fetch, save, helpful, report, db, getNextId };
 
 
 

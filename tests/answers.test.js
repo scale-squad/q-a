@@ -6,13 +6,11 @@ describe('Answers API', () => {
   // GET /qa/questions/:question_id/answers
   test('should retrieve answers for a given question', async () => {
     const response = await request(app)
-      .get('/qa/answers')
-      .query({ question_id: Number(1) }); // Ensure question_id is passed as an integer
+      .get('/qa/questions/1/answers')
+      .query({ page: Number(1), count: Number(5) });
 
     expect(response.status).toBe(200);
-    // Check that response body has 'results' property, expected to be an array
-    expect(response.body).toHaveProperty('results');
-    expect(Array.isArray(response.body.results)).toBe(true); // Confirm 'results' is an array
+    expect(Array.isArray(response.body)).toBe(true);
   });
 
   // POST /qa/questions/:question_id/answers
@@ -32,14 +30,14 @@ describe('Answers API', () => {
   // PUT /qa/answers/:answer_id/helpful
   it('should mark an answer as helpful', async () => {
     const response = await request(app)
-      .put('/qa/answers/1/helpful'); // Ensure answer_id is passed correctly as an integer
+      .put('/qa/answers/1/helpful');
     expect(response.status).toBe(204);
   });
 
   // PUT /qa/answers/:answer_id/report
   it('should report an answer', async () => {
     const response = await request(app)
-      .put('/qa/answers/1/report'); // Ensure answer_id is passed correctly as an integer
+      .put('/qa/answers/1/report');
     expect(response.status).toBe(204);
   });
 });
