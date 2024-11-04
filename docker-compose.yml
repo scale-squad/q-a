@@ -1,0 +1,18 @@
+
+services:
+  qa-app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    env_file:
+      - .env
+
+  mongo:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+    volumes:
+      - /usr/local/var/mongodb:/data/db
+

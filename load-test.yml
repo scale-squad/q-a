@@ -1,0 +1,32 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 1
+    - duration: 30
+      arrivalRate: 10
+    - duration: 30
+      arrivalRate: 100
+    - duration: 30
+      arrivalRate: 1000
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Fetch answers for a specific question"
+    flow:
+      - get:
+          url: "/qa/questions/1/answers"
+          qs:
+            page: "1"
+            count: "5"
+
+  # - name: "Fetch questions for a specific product"
+  #   flow:
+  #     - get:
+  #         url: "/qa/questions"
+  #         qs:
+  #           product_id: "1"
+  #           page: "1"
+  #           count: "5"

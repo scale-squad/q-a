@@ -1,5 +1,10 @@
+require('dotenv').config();
 const mongoose = require("mongoose");
-mongoose.connect('mongodb://localhost/qa_database', {});
+
+mongoose.connect(process.env.DB_URL, {
+});
+
+// mongoose.connect('mongodb://localhost/qa_database', {});
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -69,8 +74,10 @@ async function getNextId(type) {
 
 
 let fetch = (collection, id, page, count) => {
+
   const skip = (page - 1) * count;
-  console.log('count in fetch:', count);
+
+
   if (collection === "questions") {
 
     return Question.aggregate([
@@ -124,6 +131,7 @@ let fetch = (collection, id, page, count) => {
       }
     ]).exec();
 
+
     // return Question.find({ product_id: id, reported: false })
     // .skip(skip)
     // .limit(count)
@@ -131,7 +139,7 @@ let fetch = (collection, id, page, count) => {
 
 
   } else {
-  return Answer.find({ reported: false, question_id: id})
+ return Answer.find({ reported: false, question_id: id})
     .limit(count)
     .skip(skip)
     .exec();
